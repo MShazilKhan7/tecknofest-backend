@@ -7,6 +7,7 @@ const authService = require('../services/auth.service');
  */
 const signup = async (req, res) => {
   try {
+    console.log("Signup request body:", req.body);
     const { name, email, password } = req.body;
 
     // Basic validation
@@ -14,17 +15,10 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
-    const { user, token } = await authService.signup({ name, email, password });
+    // Service now returns { token, refreshToken, user }
+    const authData = await authService.signup({ name, email, password });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        token,
-      },
-    });
+    res.status(201).json(authData);
   } catch (error) {
     res.status(400).json({
       success: false,
@@ -46,17 +40,10 @@ const login = async (req, res) => {
       return res.status(400).json({ message: 'Please provide email and password' });
     }
 
-    const { user, token } = await authService.login(email, password);
+    // Service now returns { token, refreshToken, user }
+    const authData = await authService.login(email, password);
 
-    res.status(200).json({
-      success: true,
-      data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        token,
-      },
-    });
+    res.status(200).json(authData);
   } catch (error) {
     res.status(401).json({
       success: false,
@@ -85,8 +72,6 @@ const forgotPassword = async (req, res) => {
       message: 'Password reset email sent',
     });
   } catch (error) {
-    // We don't want to reveal if a user exists or not for security reasons in some cases,
-    // but here we follow the service's error for clarity.
     res.status(400).json({
       success: false,
       message: error.message,
@@ -130,7 +115,7 @@ const resetPassword = async (req, res) => {
 const getMe = async (req, res) => {
   res.status(200).json({
     success: true,
-    data: req.user,
+    data: req.user, // req.user should be in the correct user shape
   });
 };
 

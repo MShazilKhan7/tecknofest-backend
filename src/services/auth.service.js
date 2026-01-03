@@ -33,7 +33,11 @@ const signup = async (userData) => {
   // Generate token
   const token = generateToken(user.id);
 
-  return { user, token };
+  return {
+    user,
+    accessToken: token,
+    refreshToken: '',
+  };
 };
 
 /**
@@ -55,7 +59,18 @@ const login = async (email, password) => {
   // Generate token
   const token = generateToken(user.id);
 
-  return { user, token };
+  return {
+    token,
+    refreshToken: '',
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      isVerified: user.isVerified ?? true,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  }
 };
 
 /**
