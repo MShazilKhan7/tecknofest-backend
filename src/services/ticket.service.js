@@ -1,6 +1,6 @@
 const prisma = require('../utils/prisma');
 
-const VALID_STATUSES = ['Open', 'In Progress', 'Resolved'];
+const VALID_STATUSES = ['open', 'in progress', 'resolved'];
 
 const createTicket = async (data) => {
   return await prisma.ticket.create({

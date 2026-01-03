@@ -28,9 +28,9 @@ model Ticket {
   id          String          @id @default(uuid())
   subject     String
   description String?
-  category    TicketCategory
-  priority    TicketPriority
-  status      TicketStatus   @default(OPEN)
+  category    String   @default("general")
+  priority    String   @default("low")
+  status      String   @default("open")
 
   userId      String
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -44,20 +44,19 @@ model Ticket {
   @@map("tickets")
 }
 
-enum TicketCategory {
-  TECHNICAL
-  BILLING
-  GENERAL
-}
+// enum TicketCategory {
+//   technical
+//   billing
+//   general
+// }
+// enum TicketPriority {
+//   low
+//   medium
+//   high
+// }
 
-enum TicketPriority {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum TicketStatus {
-  OPEN
-  IN_PROGRESS
-  RESOLVED
-}
+// enum TicketStatus {
+//   open
+//   in_Progress
+//   resolved
+// }
