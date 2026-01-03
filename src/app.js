@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const authRoutes = require('./routes/auth.routes');
+const ticketRoutes = require('./routes/tickets.routes');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/tickets', ticketRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
