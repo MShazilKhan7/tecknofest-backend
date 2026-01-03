@@ -9,7 +9,10 @@ const app = express();
 
 // Middleware
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+app.use(cors({
+  origin: ["http:localhost:8080",
+  "http:localhost:5001"],
+})); // Enable CORS
 app.use(morgan('dev')); // Logging
 app.use(express.json()); // Body parser
 app.use(express.urlencoded({ extended: false }));

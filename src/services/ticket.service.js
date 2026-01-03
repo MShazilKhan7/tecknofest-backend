@@ -1,61 +1,119 @@
-const Ticket = require('../models/ticket.model');
+const prisma = require('../utils/prisma');
+
+const VALID_STATUSES = ['Open', 'In Progress', 'Resolved'];
 
 const createTicket = async (data) => {
-  return await Ticket.create({
-    subject: data.subject,
-    description: data.description,
-    category: data.category,
-    priority: data.priority,
-    user: data.userId,
+  return await prisma.ticket.create({
+    data: {
+      subject: data.subject,
+      description: data.description || null,
+      category: data.category,
+      priority: data.priority,
+      userId: data.userId,
+      status: 'Open',
+    },
   });
 };
 
-const getTickets = async (userId, filters) => {
-  const query = { user: userId };
+/**
+ * Get tickets with filters + search
+ */
+const getTickets = async (userId, filters = {}) => {
+  const where = {
+    userId,
+  };
 
-  if (filters.priority) query.priority = filters.priority;
-  if (filters.status) query.status = filters.status;
-
-  if (filters.search) {
-    query.subject = { $regex: filters.search, $options: 'i' };
+  if (filters.priority) {
+    where.priority = filters.priority;
   }
 
-  return await Ticket.find(query).sort({ createdAt: -1 });
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  if (filters.search) {
+    where.subject = {
+      contains: filters.search,
+      mode: 'insensitive',
+    };
+  }
+
+  return await prisma.ticket.findMany({
+    where,
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
 };
 
+/**
+ * Ticket dashboard stats
+ */
 const getTicketStats = async (userId) => {
-  const tickets = await Ticket.find({ user: userId });
+  const [open, inProgress, resolved] = await Promise.all([
+    prisma.ticket.count({ where: { userId, status: 'Open' } }),
+    prisma.ticket.count({ where: { userId, status: 'In Progress' } }),
+    prisma.ticket.count({ where: { userId, status: 'Resolved' } }),
+  ]);
 
-  return {
-    open: tickets.filter(t => t.status === 'Open').length,
-    inProgress: tickets.filter(t => t.status === 'In Progress').length,
-    resolved: tickets.filter(t => t.status === 'Resolved').length,
-  };
+  return { open, inProgress, resolved };
 };
 
+/**
+ * Update full ticket
+ */
 const updateTicket = async (ticketId, userId, data) => {
-  const ticket = await Ticket.findOne({ _id: ticketId, user: userId });
+  const ticket = await prisma.ticket.findFirst({
+    where: { id: ticketId, userId },
+  });
+
   if (!ticket) throw new Error('Ticket not found');
 
-  Object.assign(ticket, data);
-  return await ticket.save();
+  return await prisma.ticket.update({
+    where: { id: ticketId },
+    data: {
+      subject: data.subject ?? ticket.subject,
+      description: data.description ?? ticket.description,
+      category: data.category ?? ticket.category,
+      priority: data.priority ?? ticket.priority,
+      status: data.status ?? ticket.status,
+    },
+  });
 };
 
+/**
+ * Update ticket status only
+ */
 const updateTicketStatus = async (ticketId, userId, status) => {
-  if (!['Open', 'In Progress', 'Resolved'].includes(status)) {
+  if (!VALID_STATUSES.includes(status)) {
     throw new Error('Invalid status');
   }
 
-  const ticket = await Ticket.findOne({ _id: ticketId, user: userId });
+  const ticket = await prisma.ticket.findFirst({
+    where: { id: ticketId, userId },
+  });
+
   if (!ticket) throw new Error('Ticket not found');
 
-  ticket.status = status;
-  return await ticket.save();
+  return await prisma.ticket.update({
+    where: { id: ticketId },
+    data: { status },
+  });
 };
 
+/**
+ * Delete ticket
+ */
 const deleteTicket = async (ticketId, userId) => {
-  const ticket = await Ticket.findOneAndDelete({ _id: ticketId, user: userId });
+  const ticket = await prisma.ticket.findFirst({
+    where: { id: ticketId, userId },
+  });
+
   if (!ticket) throw new Error('Ticket not found');
+
+  await prisma.ticket.delete({
+    where: { id: ticketId },
+  });
 };
 
 module.exports = {
